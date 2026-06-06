@@ -1,6 +1,29 @@
 # Open Source LLM
 
-Run local LLM experiments with [Ollama](https://ollama.com) and Python.
+Run local LLM experiments with [Ollama](https://ollama.com) and Python — from notebooks and prompt engineering to a PDF-based RAG chatbot powered by [LangChain](https://www.langchain.com/) and [Chroma](https://www.trychroma.com/).
+
+## Project structure
+
+```
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── LICENSE
+├── .env.example
+├── notebooks/
+│   ├── 01_first_ollama.ipynb
+│   └── 02_prompt_engineering.ipynb
+├── src/
+│   ├── rag_chatbot.py    # RAG pipeline (load PDF → embed → query)
+│   └── rag_app.py        # Interactive CLI chat
+├── data/
+│   └── iso27001.pdf      # Place your PDF here (not tracked in git)
+├── chroma_db/            # Generated vector store (not tracked in git)
+├── docs/
+│   └── notes.md
+└── tests/
+    └── test_basic.py
+```
 
 ## Requirements
 
@@ -17,10 +40,13 @@ Download and install from [ollama.com/download](https://ollama.com/download), th
 ollama --version
 ```
 
-### 2. Pull the model
+### 2. Pull models
+
+This project uses a chat model and an embedding model:
 
 ```bash
 ollama pull llama3.2:1b
+ollama pull nomic-embed-text
 ```
 
 ### Useful Ollama commands
@@ -33,7 +59,7 @@ ollama pull llama3.2:1b
 | `ollama rm <model>` | Remove a model |
 | `/bye` | Exit chat session |
 
-### Recommended models (light → heavy)
+### Recommended chat models (light → heavy)
 
 | Model | Size | Notes |
 |-------|------|-------|
@@ -54,22 +80,47 @@ source llm-env/bin/activate
 # Windows
 llm-env\Scripts\activate
 
-pip install transformers torch ollama langchain langchain-community
+pip install -r requirements.txt
+cp .env.example .env
 ```
+
+### 4. Add a PDF document
+
+Place a PDF at `data/iso27001.pdf` (or change `PDF_PATH` in `src/rag_chatbot.py`). PDF files in `data/` are not committed to git.
+
+## Configuration
+
+Copy `.env.example` to `.env` and adjust as needed:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama API endpoint |
+| `OLLAMA_MODEL` | `llama3.2:1b` | Chat model for answers |
+| `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model for RAG |
 
 ## Run
 
 Make sure Ollama is running, then:
 
 ```bash
-python first_llm.py
-python promtp_engineering.py
+# Notebooks
+jupyter notebook notebooks/
+
+# RAG chatbot (indexes PDF on first start, then interactive Q&A)
+python -m src.rag_app
+
+# Tests
+pytest
 ```
+
+On first launch, `rag_chatbot.py` loads the PDF, splits it into chunks, embeds them with Ollama, and stores the vectors in `chroma_db/`. Subsequent runs reuse the persisted store.
 
 ## Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
 | Connection refused | Start Ollama (`ollama serve` or open the Ollama app) |
-| Model not found | `ollama pull llama3.2:1b` |
-| `ModuleNotFoundError: ollama` | Activate the venv and run `pip install ollama` |
+| Model not found | `ollama pull llama3.2:1b` and `ollama pull nomic-embed-text` |
+| PDF not found | Add your PDF to `data/iso27001.pdf` |
+| `ModuleNotFoundError` | Activate the venv and run `pip install -r requirements.txt` |
+| Slow first run | Initial indexing embeds every chunk — this is expected |

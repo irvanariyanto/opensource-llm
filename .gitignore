@@ -1,0 +1,36 @@
+# Environment
+llm-env/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Testing & tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# RAG / local data
+chroma_db/
+data/*.pdf
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
