@@ -7,7 +7,8 @@ Run local LLM experiments with [Ollama](https://ollama.com) and Python — from 
 ```
 ├── .gitignore
 ├── README.md
-├── requirements.txt
+├── pyproject.toml
+├── uv.lock
 ├── LICENSE
 ├── .env.example
 ├── notebooks/
@@ -28,6 +29,7 @@ Run local LLM experiments with [Ollama](https://ollama.com) and Python — from 
 ## Requirements
 
 - [Ollama](https://ollama.com/download)
+- [uv](https://docs.astral.sh/uv/)
 - Python 3.10+
 
 ## Setup
@@ -69,22 +71,22 @@ ollama pull nomic-embed-text
 | `llama3.1:8b` | ~4.7 GB | More capable |
 | `mistral:7b` | ~4.1 GB | Popular general-purpose model |
 
-### 3. Python environment
+### 3. Install uv
 
 ```bash
-python -m venv llm-env
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-# Linux / macOS
-source llm-env/bin/activate
+### 4. Python environment
 
-# Windows
-llm-env\Scripts\activate
-
-pip install -r requirements.txt
+```bash
+uv sync
 cp .env.example .env
 ```
 
-### 4. Add a PDF document
+`uv sync` creates `.venv` and installs dependencies from `uv.lock` (including dev tools like pytest and Jupyter).
+
+### 5. Add a PDF document
 
 Place a PDF at `data/iso27001.pdf` (or change `PDF_PATH` in `src/rag_chatbot.py`). PDF files in `data/` are not committed to git.
 
@@ -104,16 +106,30 @@ Make sure Ollama is running, then:
 
 ```bash
 # Notebooks
-jupyter notebook notebooks/
+uv run jupyter notebook notebooks/
 
 # RAG chatbot (indexes PDF on first start, then interactive Q&A)
-python -m src.rag_app
+uv run python -m src.rag_app
 
 # Tests
-pytest
+uv run pytest
 ```
 
 On first launch, `rag_chatbot.py` loads the PDF, splits it into chunks, embeds them with Ollama, and stores the vectors in `chroma_db/`. Subsequent runs reuse the persisted store.
+
+## Dependency management
+
+Direct dependencies live in `pyproject.toml`. To add a package:
+
+```bash
+uv add <package>
+```
+
+For development-only tools:
+
+```bash
+uv add --dev <package>
+```
 
 ## Troubleshooting
 
@@ -122,5 +138,5 @@ On first launch, `rag_chatbot.py` loads the PDF, splits it into chunks, embeds t
 | Connection refused | Start Ollama (`ollama serve` or open the Ollama app) |
 | Model not found | `ollama pull llama3.2:1b` and `ollama pull nomic-embed-text` |
 | PDF not found | Add your PDF to `data/iso27001.pdf` |
-| `ModuleNotFoundError` | Activate the venv and run `pip install -r requirements.txt` |
+| `ModuleNotFoundError` | Run `uv sync` to install dependencies |
 | Slow first run | Initial indexing embeds every chunk — this is expected |
