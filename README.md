@@ -140,6 +140,42 @@ Adjust settings inside your `.env` file:
 | `OLLAMA_MODEL` | `llama3.2:1b` | LLM model for responding |
 | `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model for semantic search |
 
+## Running with Docker Compose
+
+As an alternative to running services locally, you can use **Docker Compose** to spin up both the FastAPI API server and the Ollama service containerized.
+
+### 1. Start the Containers
+Start the services in the background:
+```bash
+docker compose up -d
+```
+This starts:
+- The **FastAPI API server** at `http://localhost:8000`
+- The **Ollama service** at `http://localhost:11435` on the host (internally communicating on `11434`)
+
+### 2. Pull the Models (Required)
+Since the Ollama container starts empty, you must pull the required models inside the container:
+```bash
+# Pull the LLM model
+docker exec -it ollama ollama pull llama3.2:1b
+
+# Pull the embedding model
+docker exec -it ollama ollama pull nomic-embed-text
+```
+
+### 3. Verify the API
+Check the API health:
+```bash
+curl http://localhost:8000/health
+```
+
+Or test the chat endpoint:
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "hi", "model": "llama3.2:1b"}'
+```
+
 ---
 
 ## Running the Applications
