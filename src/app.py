@@ -1,3 +1,4 @@
+from fastapi.responses import StreamingResponse
 from fastapi import FastAPI
 from pydantic import BaseModel
 import ollama
@@ -27,6 +28,19 @@ def chat(req: ChatRequest) -> ChatResponse:
         return ChatResponse(response=response["message"]["content"])
     except Exception as e:
         return ChatResponse(response=f"Error: {e}")
+
+@app.post("/stream")
+def stream_chat(request: ChatRequest):
+    def generate():
+        stream = ollama.chat(
+            model=request.model,
+            messages=[{"role": "user", "content": request.message}],
+            stream=True,
+        )
+        for response in stream:
+            yield response["message"]["content"]
+    return StreamingResponse(generate(), media_type="text/event-stream")
+    
 
 if __name__ == "__main__":
     import uvicorn
